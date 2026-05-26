@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "user_public": {
+      "title": "User Public Profile",
+      "description": "Public profile details, accessible by authorized readers.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "User's display username"
+        },
+        "preferredBase": {
+          "type": "string",
+          "description": "User's preferred base currency code"
+        }
+      },
+      "required": ["username", "preferredBase"]
+    },
+    "user_private": {
+      "title": "User Private Information",
+      "description": "Isolated collection for personal information to maintain absolute security boundaries and PII protection.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's verified email address"
+        },
+        "receiveDailyUpdates": {
+          "type": "boolean",
+          "description": "Preference for daily rate emails"
+        },
+        "receiveAlerts": {
+          "type": "boolean",
+          "description": "Preference for real-time push/in-app alert updates"
+        }
+      },
+      "required": ["email", "receiveDailyUpdates", "receiveAlerts"]
+    },
+    "favorite_pair": {
+      "title": "Favorite Currency Pair",
+      "description": "Bookmarks for user's favorite currency conversion combinations.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user who saves the pair"
+        },
+        "fromCode": {
+          "type": "string",
+          "description": "The base currency code"
+        },
+        "toCode": {
+          "type": "string",
+          "description": "The target currency code"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when favorited"
+        }
+      },
+      "required": ["userId", "fromCode", "toCode", "createdAt"]
+    },
+    "rate_alert": {
+      "title": "Rate Alert",
+      "description": "User-defined alerts for specific exchange rate limits.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID of this rate alert"
+        },
+        "fromCode": {
+          "type": "string",
+          "description": "The source currency code"
+        },
+        "toCode": {
+          "type": "string",
+          "description": "The target currency code"
+        },
+        "targetRate": {
+          "type": "number",
+          "description": "The rate value target to trigger alert"
+        },
+        "condition": {
+          "type": "string",
+          "enum": ["above", "below"],
+          "description": "Condition check: whether rate is above or below targetRate"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the alert is active"
+        },
+        "isTriggered": {
+          "type": "boolean",
+          "description": "Whether the alert has been triggered already"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "triggeredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Trigger ISO timestamp"
+        },
+        "triggeredRate": {
+          "type": "number",
+          "description": "Rate value when alert was triggered"
+        }
+      },
+      "required": ["userId", "fromCode", "toCode", "targetRate", "condition", "isActive", "isTriggered", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/public/profile": {
+      "schema": { "$ref": "#/entities/user_public" },
+      "description": "Publicly visible aspects of user profiles."
+    },
+    "users/{userId}/private/info": {
+      "schema": { "$ref": "#/entities/user_private" },
+      "description": "Sensitive isolated user demographics and credentials for strictly private retrieval only."
+    },
+    "favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/favorite_pair" },
+      "description": "User personal favorites list records indexed with dynamic rate checks."
+    },
+    "alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/rate_alert" },
+      "description": "Live custom threshold notifications and trigger definitions."
+    }
+  }
+}

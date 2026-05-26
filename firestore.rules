@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE SECURITY PRIMITIVES ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- ENTITY SCHEMA VALIDATORS ---
+    function isValidUserPublic(data) {
+      return data.keys().hasAll(['username', 'preferredBase'])
+        && data.keys().size() == 2
+        && data.username is string
+        && data.username.size() >= 2
+        && data.username.size() <= 64
+        && data.preferredBase is string
+        && data.preferredBase.size() == 3;
+    }
+
+    function isValidUserPrivate(data) {
+      return data.keys().hasAll(['email', 'receiveDailyUpdates', 'receiveAlerts'])
+        && data.keys().size() == 3
+        && data.email is string
+        && data.email.size() <= 128
+        && data.receiveDailyUpdates is bool
+        && data.receiveAlerts is bool;
+    }
+
+    function isValidFavorite(data) {
+      return data.keys().hasAll(['userId', 'fromCode', 'toCode', 'createdAt'])
+        && data.keys().size() == 4
+        && data.userId == request.auth.uid
+        && data.fromCode is string
+        && data.fromCode.size() == 3
+        && data.toCode is string
+        && data.toCode.size() == 3
+        && data.createdAt is string;
+    }
+
+    function isValidAlert(data) {
+      return data.keys().hasAll(['userId', 'fromCode', 'toCode', 'targetRate', 'condition', 'isActive', 'isTriggered', 'createdAt'])
+        && (data.keys().size() == 8 || data.keys().size() == 10) // accommodates triggeredAt / triggeredRate
+        && data.userId == request.auth.uid
+        && data.fromCode is string
+        && data.fromCode.size() == 3
+        && data.toCode is string
+        && data.toCode.size() == 3
+        && data.targetRate is number
+        && data.targetRate > 0.0
+        && data.condition is string
+        && (data.condition == 'above' || data.condition == 'below')
+        && data.isActive is bool
+        && data.isTriggered is bool;
+    }
+
+    // --- COLLECTION RULES MATCHES ---
+    match /users/{userId} {
+      match /public/profile {
+        allow get: if isSignedIn() && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidUserPublic(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidUserPublic(incoming())
+          && incoming().diff(existing()).affectedKeys().hasOnly(['username', 'preferredBase']);
+      }
+
+      match /private/info {
+        allow get: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidUserPrivate(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidUserPrivate(incoming())
+          && incoming().diff(existing()).affectedKeys().hasOnly(['receiveDailyUpdates', 'receiveAlerts']);
+      }
+    }
+
+    match /favorites/{favoriteId} {
+      allow get: if isSignedIn() && isOwner(existing().userId) && isValidId(favoriteId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(favoriteId) && isValidFavorite(incoming());
+      allow delete: if isSignedIn() && isOwner(existing().userId) && isValidId(favoriteId);
+    }
+
+    match /alerts/{alertId} {
+      allow get: if isSignedIn() && isOwner(existing().userId) && isValidId(alertId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(alertId) && isValidAlert(incoming());
+      
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidId(alertId) && isValidAlert(incoming()) && (
+        // Action: Toggle active state
+        incoming().diff(existing()).affectedKeys().hasOnly(['isActive']) ||
+        // Action: Trigger alert threshold hit
+        incoming().diff(existing()).affectedKeys().hasOnly(['isTriggered', 'isActive', 'triggeredAt', 'triggeredRate'])
+      );
+
+      allow delete: if isSignedIn() && isOwner(existing().userId) && isValidId(alertId);
+    }
+  }
+}
