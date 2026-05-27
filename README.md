@@ -1,20 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Currency Converter
 
-# Run and deploy your AI Studio app
+A sophisticated currency converter featuring live exchange rate tracking, interactive historical trend graphs, saved favorites, custom price alerts, and personalized user profiles.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/d0dfa879-b4d8-4f26-a07d-2c611269dd7c
+- 💱 Real-time exchange rate conversion
+- 📈 Interactive historical trend graphs
+- ⭐ Save favorite currency pairs
+- 🔔 Custom price alerts
+- 👤 Personalized user profiles
+- 🔥 Firebase authentication & Firestore storage
+
+## Tech Stack
+
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS
+- Firebase (Auth + Firestore)
+- Recharts
+- Express (backend server)
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+   ```
+   npm install
+   ```
+2. Set the `GEMINI_API_KEY` in `.env.local` to your API key
 3. Run the app:
-   `npm run dev`
+   ```
+   npm run dev
+   ```
+
+## Build for Production
+
+```
+npm run build
+npm start
+```

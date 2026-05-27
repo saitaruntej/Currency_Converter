@@ -2,5 +2,5 @@
   "name": "Currency Converter",
   "description": "A sophisticated currency converter featuring live exchange rate tracking, interactive historical trend graphs, saved favorites, custom price alerts, and personalized user profiles.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
